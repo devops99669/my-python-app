@@ -1,116 +1,164 @@
-
- 
 Jenkins Lab Setup Guide
-Once Docker is installed, verify the following processes:
-Check Docker service status
+✅ Prerequisites
+Ensure Docker is installed on your VM. Then verify the following:
+
+bash
+Copy
+Edit
+# Check Docker service status
 systemctl status docker
-Verify Docker version
-docker –version
-1.	Jenkins Installation via Docker
 
+# Check Docker version
+docker --version
+1. 🛠️ Jenkins Installation via Docker
 Step 1: Pull Jenkins Docker Image
+bash
+Copy
+Edit
 docker pull jenkins/jenkins:lts
-
 Step 2: Run Jenkins Container
+bash
+Copy
+Edit
 docker run -d \
   --name jenkins \
   -p 8080:8080 -p 50000:50000 \
   -v jenkins_home:/var/jenkins_home \
   jenkins/jenkins:lts
-
-Step 3: Retrieve Initial Admin Password
+Step 3: Get Jenkins Admin Password
+bash
+Copy
+Edit
 docker exec -it jenkins cat /var/jenkins_home/secrets/initialAdminPassword
-
-2. Freestyle Job to Run app.py
-
+2. ⚙️ Create Freestyle Job to Run app.py
 Step 1: Create the Job
-1. Go to Jenkins Dashboard
-2. Click “New Item”
-3. Name it: run-python-app-freestyle
-4. Select Freestyle project
-5. Click OK
+Go to Jenkins Dashboard → “New Item”
 
-Step 2: Configure Source Code Management (Git)
-1. Under Source Code Management, select: Git
-2. Enter the repo URL: https://github.com/devops99669/my-python-app.git
-3. Leave credentials blank if public
-4. Branch: main
+Name it: run-python-app-freestyle
+
+Select Freestyle Project → Click OK
+
+Step 2: Configure Git
+Source Code Management: Git
+
+Repo URL:
+
+bash
+Copy
+Edit
+https://github.com/devops99669/my-python-app.git
+Branch: main
+
+Leave credentials blank if public.
 
 Step 3: Add Build Step
-1. Scroll to Build → Click Add build step → Choose Execute shell
-2. Paste:
+Under Build → Add build step → Execute shell, paste:
+
+bash
+Copy
+Edit
 echo "✅ Running Python script..."
 python3 app.py
+Step 4: Save and Run
+Click Save
 
-Step 4: Save and Build
-1. Click Save
-2. Click Build Now
-3. View Console Output
+Click Build Now
 
-Expected Output:
+Check Console Output
+
+Expected output:
+
+bash
+Copy
+Edit
 ✅ Running Python script...
 Hello from Git to test to run jenkins pipeline
+3. 📧 Configure Jenkins Mail Server (Gmail)
+Go to: Manage Jenkins → Configure System
 
-3. Configure Jenkins Mail Server
+Scroll to E-mail Notification and set:
 
-1. Navigate to: Manage Jenkins → Configure System
-2. Scroll to E-mail Notification
-3. Configure as below:
-   - SMTP server: smtp.gmail.com
-   - Use SMTP Authentication: ✅
-   - Username: your-email@gmail.com
-   - Password: your-app-password
-   - Use SSL: ✅
-   - SMTP Port: 465
-   - Reply-To: (optional)
-4. Click Test configuration
+SMTP server: smtp.gmail.com
 
-4. Post-Build Email Notification
+Use SMTP Authentication: ✅
 
-1. Go to your Freestyle job → Configure
-2. Scroll to Post-build Actions
-3. Click Add post-build action → E-mail Notification
-4. Set:
-   - Recipients: your-email@gmail.com
-   - Triggers:
-     - "Send e-mail for every unstable build"
-     - "Success"
+Username: your-email@gmail.com
 
-5. Jenkins Master-Agent Setup (SSH)
+Password: your-app-password
 
-Prerequisites:
-- Jenkins Master (Docker or VM)
-- Separate Agent VM with SSH access
-- Java installed on Agent
-- SSH access enabled
+Use SSL: ✅
+
+SMTP Port: 465
+
+Reply-To Address: (optional)
+
+Click Test Configuration
+
+4. 📨 Post-Build Email Notification
+Go to your job → Configure
+
+Scroll to Post-build Actions
+
+Add E-mail Notification
+
+Configure:
+
+Recipients: your-email@gmail.com
+
+Triggers: ✅ Success, ✅ Unstable builds
+
+5. 🔗 Jenkins Master-Agent Setup via SSH
+Prerequisites
+Jenkins Master (Docker or VM)
+
+Separate Agent VM with:
+
+SSH Access
+
+Java Installed
 
 Step 1: Prepare Agent Node
+bash
+Copy
+Edit
 sudo apt update
 sudo apt install default-jre -y
 sudo useradd -m -s /bin/bash jenkins
 sudo passwd jenkins
-
-Step 2: Setup SSH Key
+Step 2: Set Up SSH Key
+bash
+Copy
+Edit
 ssh-keygen -t rsa -b 4096
 ssh-copy-id jenkins@<agent_ip>
-
 Step 3: Configure Jenkins Master
-1. Go to: Manage Jenkins → Manage Nodes and Clouds → New Node
-2. Name: agent1 → Select: Permanent Agent
-3. Settings:
-   - Executors: 1
-   - Remote root directory: /home/jenkins
-   - Launch method: Launch agent via SSH
-   - Host: <agent_ip>
-   - Credentials: Add SSH of jenkins user
-   - Host Key Verification: Non-verifying (for test only)
+Go to: Manage Jenkins → Manage Nodes and Clouds → New Node
+
+Name: agent1, select Permanent Agent
+
+Set:
+
+Executors: 1
+
+Remote Root Directory: /home/jenkins
+
+Launch Method: Launch agent via SSH
+
+Host: <agent_ip>
+
+Credentials: Add jenkins SSH credentials
+
+Host Key Verification: Non-verifying (for lab/test only)
 
 Step 4: Launch Agent
-- Click Save → Then Launch Agent
-- Verify agent status is online
+Click Save → Then click Launch Agent
 
-6. Sample Pipeline to Run on Agent
+Agent should be online and connected
 
+6. 🚧 Sample Pipeline to Run on Agent
+groovy
+Copy
+Edit
 pipeline {
     agent { label 'agent1' }
     stages {
@@ -121,21 +169,10 @@ pipeline {
         }
     }
 }
-
-7. Summary Table
-
-Component         | Purpose
-------------------|--------------------------------------
-Jenkins Master    | Controls jobs and UI
-Jenkins Agent     | Executes jobs
-SSH Setup         | Secure connection master ↔ agent
-Email Setup       | Notifications via Gmail
-Pipeline Targeting| Use labels to assign jobs to agents
-
- 
-
- 
- 
-
- 
-
+7. 📊 Summary Table
+Component	Purpose
+Jenkins Master	Controls jobs and UI
+Jenkins Agent	Executes builds/jobs
+SSH Setup	Secure communication (Master ↔ Agent)
+Email Setup	Notifications via Gmail
+Pipeline Targeting	Use labels to assign builds to agents
